@@ -10,6 +10,19 @@ MYSQLUSER="mysql_username_here"  # Used to test cluster's status, need USAGE.
 MYSQLPASS="mysql_password_here"
 
 
+#Send_mail function, called by verify_cluster to alert DEST_ADDRESS on CRITICAL.
+function send_mail {
+    DEST_ADDRESS="thomas.soenen@premier.fed.be Wim.VanderPlanken@premier.fed.be"
+    FROM_ADDRESS="`(hostname -s)`@`(hostname -d)`"
+    CRITMESSAGE="$1"
+
+    FROM="From: $FROM_ADDRESS"
+    SUBJECT="Subject: GALERA CRITICAL on `(hostname)`"
+    BODY="You have received this mail because the galera_autostart.sh script had errors starting the cluster.\nError message is:\n$CRITMESSAGE\nRegards,"
+
+    echo -e "$FROM\n$SUBJECT\n$BODY" | /usr/sbin/sendmail $DEST_ADDRESS
+}
+
 # Function to run at the end of the script execution, to check on the status of the cluster and send alerts if needed.
 function verify_cluster {
     #Check for mysql service's status
@@ -25,22 +38,20 @@ function verify_cluster {
     if [ "$MASTER1DAEMSTAT" == "SUCCESS!" ] && [ "$MASTER2DAEMSTAT" == "SUCCESS!" ]; then
         if [ "$CLUSTERSIZE" == "2" ]; then
             if [ "$M1CLUSTERSTATUS" == "Primary" ] && [ "$M2CLUSTERSTATUS" == "Primary" ]; then
-                echo -e "Daemonstatus M1: $MASTER1DAEMSTAT\nDaemonstatus M2: $MASTER2DAEMSTAT\nClusterSize: $CLUSTERSIZE\nM1 ClusterStat: $M1CLUSTERSTATUS\nM2 ClusterStat: $M2CLUSTERSTATUS\n"
-                logger "GALERA OK: Cluster is started correctly."
                 exit 0
             else
-                echo -e "Daemonstatus M1: $MASTER1DAEMSTAT\nDaemonstatus M2: $MASTER2DAEMSTAT\nClusterSize: $CLUSTERSIZE\nM1 ClusterStat: $M1CLUSTERSTATUS\nM2 ClusterStat: $M2CLUSTERSTATUS\n"
-                logger "GALERA CRITICAL: The cluster doesn't have the Primary status on one member."
+                CRITMESSAGE="GALERA CRITICAL: The cluster doesn't have the Primary status on one or both members."
+                send_mail "$CRITMESSAGE"
                 exit 0
             fi
         else
-            echo -e "Daemonstatus M1: $MASTER1DAEMSTAT\nDaemonstatus M2: $MASTER2DAEMSTAT\nClusterSize: $CLUSTERSIZE\nM1 ClusterStat: $M1CLUSTERSTATUS\nM2 ClusterStat: $M2CLUSTERSTATUS\n"
-            logger "GALERA CRITICAL: Cluster has only one member with both hosts started, split brain."
+            CRITMESSAGE="GALERA CRITICAL: Cluster has only one member with both hosts started, split brain."
+            send_mail "$CRITMESSAGE"
             exit 0
         fi
     else
-        echo -e "Daemonstatus M1: $MASTER1DAEMSTAT\nDaemonstatus M2: $MASTER2DAEMSTAT\nClusterSize: $CLUSTERSIZE\nM1 ClusterStat: $M1CLUSTERSTATUS\nM2 ClusterStat: $M2CLUSTERSTATUS\n"
-        logger "GALERA CRITICAL: One member's daemon is stopped."
+        CRITMESSAGE="GALERA CRITICAL: One or both members' daemon is stopped."
+        send_mail "$CRITMESSAGE"
         exit 0
     fi
 }
@@ -113,4 +124,5 @@ elif [ "$MASTER1DAEMSTAT" == "ERROR!" ]; then
     fi
 
 fi
+
 
