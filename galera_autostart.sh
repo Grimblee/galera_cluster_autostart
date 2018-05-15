@@ -12,7 +12,7 @@ MYSQLPASS="mysql_password_here"
 
 #Send_mail function, called by verify_cluster to alert DEST_ADDRESS on CRITICAL.
 function send_mail {
-    DEST_ADDRESS="thomas.soenen@premier.fed.be Wim.VanderPlanken@premier.fed.be"
+    DEST_ADDRESS="some_address@somedomain.com another_address@somedomain.com"
     FROM_ADDRESS="`(hostname -s)`@`(hostname -d)`"
     CRITMESSAGE="$1"
 
