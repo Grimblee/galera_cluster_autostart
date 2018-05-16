@@ -114,7 +114,7 @@ elif [ "$MASTER1DAEMSTAT" == "ERROR!" ]; then
 
         # Check the grastate.dat file on both host to determine who has the most up2date data and start cluster accordingly.
         MASTER1STATS=`(grep safe_to /var/lib/mysql/grastate.dat | awk '{print $NF}')`
-        MASTER2STATS=`(ssh root@vl2688icingatestm2 "grep safe_to /var/lib/mysql/grastate.dat" | awk '{print $NF}')`
+        MASTER2STATS=`(ssh root@$MASTER2 "grep safe_to /var/lib/mysql/grastate.dat" | awk '{print $NF}')`
         if [ "$MASTER1STATS" == "1" ]; then
             /etc/init.d/mysql start --wsrep-new-cluster && ssh root@$MASTER2 "/etc/init.d/mysql start"
         elif [ "$MASTER2STATS" == "1" ]; then
